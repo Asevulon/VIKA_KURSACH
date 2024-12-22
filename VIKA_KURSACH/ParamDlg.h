@@ -33,6 +33,7 @@ public:
 	double Fi3;
 	CComboBox SignalMode;
 	CString sm;
+	CString nm;
 	virtual BOOL OnInitDialog();
 	afx_msg void OnBnClickedOk();
 	int N1;
@@ -40,4 +41,6 @@ public:
 	int N3;
 	int N;
 	double dt;
+	CComboBox Noiser;
+	double NoiseLevel;
 };

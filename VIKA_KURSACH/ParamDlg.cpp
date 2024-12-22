@@ -22,11 +22,12 @@ ParamDlg::ParamDlg(CWnd* pParent /*=nullptr*/)
 	, A3(1)
 	, W3(300)
 	, Fi3(0)
-	, N1(512)
-	, N2(512)
-	, N3(1024)
+	, N1(128)
+	, N2(128)
+	, N3(256)
 	, N(512)
-	, dt(1000)
+	, dt(3000)
+	, NoiseLevel(0.1)
 {
 
 }
@@ -53,6 +54,8 @@ void ParamDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT12, N3);
 	DDX_Text(pDX, IDC_EDIT16, N);
 	DDX_Text(pDX, IDC_EDIT15, dt);
+	DDX_Control(pDX, IDC_COMBO2, Noiser);
+	DDX_Text(pDX, IDC_EDIT17, NoiseLevel);
 }
 
 
@@ -74,6 +77,11 @@ BOOL ParamDlg::OnInitDialog()
 	if (sm.IsEmpty())SignalMode.SetCurSel(0);
 	else SignalMode.SetWindowTextW(sm);
 
+	Noiser.AddString(L"Розовый");
+	Noiser.AddString(L"Красный");
+	Noiser.AddString(L"Без шума");
+	if (nm.IsEmpty())Noiser.SetCurSel(0);
+	else Noiser.SetWindowTextW(nm);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// Исключение: страница свойств OCX должна возвращать значение FALSE
 }
@@ -84,5 +92,6 @@ void ParamDlg::OnBnClickedOk()
 	// TODO: добавьте свой код обработчика уведомлений
 	UpdateData();
 	SignalMode.GetWindowTextW(sm);
+	Noiser.GetWindowTextW(nm);
 	CDialogEx::OnOK();
 }

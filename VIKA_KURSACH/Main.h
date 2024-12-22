@@ -5,6 +5,7 @@ using namespace std;
 
 const double Pi = 4 * atan(1);
 
+
 class Main
 {
 public:
@@ -12,6 +13,7 @@ public:
 
 private:
 	double dt = 0;
+	double NoiseLevel = 0;
 
 	int N = 0;
 
@@ -41,6 +43,9 @@ private:
 	vector<double>ftakeys;
 
 	SignalType st;
+
+	typedef vector<double>(Main::* NoiseGenPtr_t)(int);
+	NoiseGenPtr_t noisetype = NULL;
 protected:
 	void CreateSignal();
 	void CreateSignalSumm();
@@ -52,7 +57,15 @@ protected:
 	vector<cmplx>ToCmplx(vector<double>& source);
 	vector<double>Abs(vector<cmplx>& source);
 
-	void FillEmptyWT();
+	void FillEmptyWT(vector<vector<double>>& target, vector<vector<double>>& source);
+
+	vector<double>RedNoise(int len);
+	vector<double>PinkNoise(int len);
+	void AddNoise(int len, NoiseGenPtr_t gen = NULL);
+	inline double rand(double left, double right);
+	inline double WhiteNoiseDot();
+	inline double CalcE(vector<double>& target);
+	bool wtswapflag = false;
 public:
 
 	void SetSin1(double A, double W, double Fi, int N);
@@ -61,15 +74,21 @@ public:
 	void SetN(int val);
 	void SetDt(double val);
 	void SetSignalMode(CString& sm);
+	void SetNoise(CString& nm);
+	void SetNoiseLevel(double val);
 
 	vector<double>GetSignal();
 	vector<double>GetSignalKeys();
 	vector<vector<double>>GetWT();
 	vector<vector<double>>GetWTFilled();
+	vector<double>GetWT(int id);
+	vector<double>GetWTSUB(int id);
+	int GetWTLen();
 	vector<double>GetFT();
 	vector<double>GetFTKeys();
 
 	void main();
+	void swapwt();
 };
 
 vector<vector<double>>WT(vector<double>& source, vector<vector<double>>& out);

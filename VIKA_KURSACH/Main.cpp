@@ -9,17 +9,18 @@ enum::Main::SignalType {
 vector<vector<double>> WT(vector<double>& source, vector<vector<double>>& output)
 {
     vector<vector<double>>res;
+    output.clear();
     vector<double> src = source;
     vector<double> out;
     vector<double> temp;
     do
     {
         temp = WTLevel(src, out);
-        res.push_back(out);
-        output.push_back(temp);
+        res.push_back(temp);
+        output.push_back(out);
         src = res.back();
-    } while (res.back().size() != 1);
-
+    } while (res.back().size() != 2);
+    
 
     return res;
 }
@@ -63,11 +64,12 @@ void Main::CreateSignalSumm()
     signalkeys = vector<double>(N, 0);
     for (int i = 0; i < N; i++)
     {
-        signal[i] = A1 * sin(W1 * i * dt + Fi1);
-        signal[i] += A2 * sin(W2 * i * dt + Fi2);
-        signal[i] += A3 * sin(W3 * i * dt + Fi3);
+        signal[i] = A1 * sin(2 * Pi * W1 * i * dt + Fi1);
+        signal[i] += A2 * sin(2 * Pi * W2 * i * dt + Fi2);
+        signal[i] += A3 * sin(2 * Pi * W3 * i * dt + Fi3);
         signalkeys[i] = i * dt;
     }
+    AddNoise(N, noisetype);
 }
 
 void Main::CreateSignalSequence()
@@ -97,6 +99,7 @@ void Main::CreateSignalSequence()
     {
         signalkeys[i] = i * dt;
     }
+    AddNoise(N1 + N2 + N3, noisetype);
 }
 
 void Main::DoWT()
@@ -138,25 +141,25 @@ vector<double> Main::Abs(vector<cmplx>& source)
     return res;
 }
 
-void Main::FillEmptyWT()
+void Main::FillEmptyWT(vector<vector<double>>&target, vector<vector<double>>&source)
 {
     int size = 0;
     int left = 0;
     int right = 0;
 
-    double localmin = *min_element(wt.front().begin(), wt.front().end());
-    for (auto& item : wt)localmin = min(localmin, *min_element(item.begin(), item.end()));
-    for (auto& item : wt)size = max(size, item.size());
+    double localmin = *min_element(source.front().begin(), source.front().end());
+    for (auto& item : source)localmin = min(localmin, *min_element(item.begin(), item.end()));
+    for (auto& item : source)size = max(size, item.size());
 
-    wtfilled = vector<vector<double>>(wt.size(), vector<double>(size, localmin));
+    target = vector<vector<double>>(source.size(), vector<double>(size, localmin));
 
-    for (int i = 0; i < wtfilled.size(); i++)
+    for (int i = 0; i < target.size(); i++)
     {
-        left = size / 2 - wt[i].size() / 2.;
-        right = size / 2 + wt[i].size() / 2.;
+        left = size / 2 - source[i].size() / 2.;
+        right = size / 2 + source[i].size() / 2.;
         for (int j = left; j < right; j++)
         {
-            wtfilled[i][j] = wt[i][j - left];
+            target[i][j] = source[i][j - left];
         }
     }
 }
@@ -195,11 +198,85 @@ void Main::SetDt(double val)
     dt = val;
 }
 
+vector<double> Main::RedNoise(int len)
+{
+    srand(time(NULL));
+    vector<double>res(len,0);
+    res[0] = WhiteNoiseDot();
+    for (int i = 1; i < len; i++)res[i] = res[i - 1] + WhiteNoiseDot();
+    return res;
+}
+
+double Main::rand(double left, double right)
+{
+    return left + (right - left) * (double)std::rand()/(double)RAND_MAX;
+}
+
+vector<double> Main::PinkNoise(int len)
+{
+    srand(time(NULL));
+    vector<double>res(len, 0);
+    for (int i = 0; i < len; i++)res[i] = WhiteNoiseDot();
+
+    auto ftn = ToCmplx(res);
+    fourea(ftn.size(), ftn, -1);
+    double f = 0;
+    double fstep = 1. / dt / (len - 1);
+    for (int i = 0; i < len; i++)
+    {
+        f = i * fstep;
+        ftn[i] = ftn[i] / sqrt(f);
+    }
+    fourea(ftn.size(), ftn, 1);
+    for (int i = 0; i < len; i++)res[i] = ftn[i].re;
+
+    return res;
+}
+
+void Main::AddNoise(int len, NoiseGenPtr_t gen)
+{
+    if (gen == NULL)return;
+    auto noise = (this->*gen)(len);
+
+    double Es = CalcE(signal);
+    double En = CalcE(noise);
+    double betta = sqrt(NoiseLevel * Es / En);
+
+    for (int i = 0; i < len; i++)signal[i] += betta * noise[i];
+}
+
 void Main::SetSignalMode(CString& sm)
 {
     if (sm == L"Сумма")st = Summ;
     else if (sm == L"Последовательный")st = Sequence;
     else abort();
+}
+
+void Main::SetNoise(CString& nm)
+{
+    if (nm == L"Розовый")noisetype = &Main::PinkNoise;
+    else if (nm == L"Красный")noisetype = &Main::RedNoise;
+    else noisetype = NULL;
+}
+
+void Main::SetNoiseLevel(double val)
+{
+    NoiseLevel = val;
+}
+
+inline double Main::WhiteNoiseDot()
+{
+    double res = 0;
+    for (int i = 0; i < 12; i++)res += rand(-1, 1);
+    res /= 12;
+    return res;
+}
+
+inline double Main::CalcE(vector<double>& target)
+{
+    double res = 0;
+    for (auto& item : target)res += item * item;
+    return res;
 }
 
 vector<double> Main::GetSignal()
@@ -222,6 +299,25 @@ vector<vector<double>> Main::GetWTFilled()
     return wtfilled;
 }
 
+vector<double> Main::GetWT(int id)
+{
+    if(id >= wt.size())
+    return vector<double>();
+    return wt[id];
+}
+
+vector<double> Main::GetWTSUB(int id)
+{
+     if(id >= wtsub.size())
+    return vector<double>();
+    return wtsub[id];
+}
+
+int Main::GetWTLen()
+{
+    return wt.size();
+}
+
 vector<double> Main::GetFT()
 {
     return fta;
@@ -234,8 +330,22 @@ vector<double> Main::GetFTKeys()
 
 void Main::main()
 {
+    wtswapflag = false;
     CreateSignal();
     DoWT();
     DoFourea();
-    FillEmptyWT();
+    FillEmptyWT(wtfilled,wt);
+}
+
+void Main::swapwt()
+{
+    if (wtswapflag)
+    {
+        FillEmptyWT(wtfilled, wt);
+    }
+    else
+    {
+        FillEmptyWT(wtfilled, wtsub);
+    }
+    wtswapflag = !wtswapflag;
 }

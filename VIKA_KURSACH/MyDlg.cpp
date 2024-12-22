@@ -62,6 +62,9 @@ void MyDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SIGNAL_PICTURE, SignalDrw);
 	DDX_Control(pDX, IDC_FT_PICTURE, FTDrw);
 	DDX_Control(pDX, IDC_WT_PICTURE, WTDrw);
+	DDX_Control(pDX, IDC_FT_PICTURE2, WTIDDrw);
+	DDX_Control(pDX, IDC_FT_PICTURE3, WTSUBDRW);
+	DDX_Control(pDX, IDC_SLIDER1, Slider);
 }
 
 BEGIN_MESSAGE_MAP(MyDlg, CDialogEx)
@@ -69,6 +72,8 @@ BEGIN_MESSAGE_MAP(MyDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDOK, &MyDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDC_BUTTON_WT, &MyDlg::OnBnClickedButtonWt)
+	ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER1, &MyDlg::OnNMCustomdrawSlider1)
 END_MESSAGE_MAP()
 
 
@@ -110,8 +115,14 @@ BOOL MyDlg::OnInitDialog()
 	FTDrw.SetTitle(L"Спектр Фурье");
 	FTDrw.SetPadding(22, 5, 10, 10);
 
-	WTDrw.SetTitle(L"Спектр Фурье");
+	WTDrw.SetTitle(L"Вейвлет разложение");
 	WTDrw.SetPadding(22, 5, 10, 15);
+
+	WTIDDrw.SetTitle(L"Указанный уровень Вейвлет разложения (полусуммы)");
+	WTIDDrw.SetPadding(22, 5, 10, 10);
+
+	WTSUBDRW.SetTitle(L"Указанный уровень Вейвлет разложения (полуразности)");
+	WTSUBDRW.SetPadding(22, 5, 10, 10);
 
 	return TRUE;  // возврат значения TRUE, если фокус не передан элементу управления
 }
@@ -171,13 +182,14 @@ void MyDlg::OnBnClickedOk()
 {
 	// TODO: добавьте свой код обработчика уведомлений
 	if (pdlg.DoModal() != IDOK)return;
-	Main m;
 	m.SetDt(1. / pdlg.dt);
 	m.SetN(pdlg.N);
 	m.SetSignalMode(pdlg.sm);
 	m.SetSin1(pdlg.A1, pdlg.W1, pdlg.Fi1, pdlg.N1);
 	m.SetSin2(pdlg.A2, pdlg.W2, pdlg.Fi2, pdlg.N2);
 	m.SetSin3(pdlg.A3, pdlg.W3, pdlg.Fi3, pdlg.N3);
+	m.SetNoise(pdlg.nm);
+	m.SetNoiseLevel(pdlg.NoiseLevel);
 	m.main();
 	
 	SignalDrw.SetData(m.GetSignal(), m.GetSignalKeys());
@@ -188,4 +200,34 @@ void MyDlg::OnBnClickedOk()
 
 	WTDrw.SetData(m.GetWTFilled());
 	WTDrw.Invalidate();
+
+	WTIDDrw.SetData(m.GetWT(0));
+	WTIDDrw.Invalidate();
+
+	WTSUBDRW.SetData(m.GetWTSUB(0));
+	WTSUBDRW.Invalidate();
+	Slider.SetRange(0, m.GetWTLen() - 1);
+	Slider.SetPos(0);
+}
+
+void MyDlg::OnBnClickedButtonWt()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	m.swapwt();
+	WTDrw.SetData(m.GetWTFilled());
+	WTDrw.Invalidate();
+}
+
+
+void MyDlg::OnNMCustomdrawSlider1(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
+	// TODO: добавьте свой код обработчика уведомлений
+	*pResult = 0;
+	int id = Slider.GetPos();
+	WTIDDrw.SetData(m.GetWT(id));
+	WTIDDrw.Invalidate();
+
+	WTSUBDRW.SetData(m.GetWTSUB(id));
+	WTSUBDRW.Invalidate();
 }
