@@ -135,7 +135,7 @@ void Drawer2D::SetStretch(bool flag)
 	if (data.empty())return;
 	right = data[0].size() - 1;
 	left = 0;
-	top = data.size();
+	top = data.size() - 1;
 	bot = 0;
 	if (!StretchFlag)
 	{
@@ -154,6 +154,14 @@ void Drawer2D::SetStretch(bool flag)
 			right = mid + lheight / 2.;
 		}
 	}
+}
+
+void Drawer2D::SetGraphRange(double pleft, double pright, double pbot, double ptop)
+{
+	printingleft = pleft;
+	printingright = pright;
+	printingtop = ptop;
+	printingbot = pbot;
 }
 
 double Drawer2D::CalcStringLen(HDC hDC, CString str)
@@ -302,6 +310,8 @@ void Drawer2D::OnGraph(LPDRAWITEMSTRUCT lpDrawItemStruct)
 
 	float steplenY = (top - bot) / 10.;
 	float steplenX = (right - left) / 10.;
+	float printingsteplenY = (printingtop - printingbot) / 10.;
+	float printingsteplenX = (printingright - printingleft) / 10.;
 
 	FontFamily FF(L"Arial");
 	Gdiplus::Font font(&FF, 12, FontStyle::FontStyleRegular, UnitPixel);
@@ -309,7 +319,7 @@ void Drawer2D::OnGraph(LPDRAWITEMSTRUCT lpDrawItemStruct)
 	for (int i = 0; i < 11; i++)
 	{
 		CString str;
-		str.Format(L"%.2f", top - i * steplenY);
+		str.Format(L"%.2f", printingtop - i * printingsteplenY);
 
 		PointF strPoint;
 		strPoint.X = left - actWidth / 100 - CalcStringLen(lpDrawItemStruct->hDC, str) / xScale;
@@ -317,7 +327,7 @@ void Drawer2D::OnGraph(LPDRAWITEMSTRUCT lpDrawItemStruct)
 		matr.TransformPoints(&strPoint);
 		gr.DrawString(str, str.GetLength() + 1, &font, strPoint, &brush);
 
-		str.Format(L"%.2f", right - i * steplenX);
+		str.Format(L"%.2f", printingright - i * printingsteplenX);
 
 		strPoint.X = right - i * steplenX - CalcStringLen(lpDrawItemStruct->hDC, str) / xScale / 2.;
 		strPoint.Y = bot + 6 / yScale;
@@ -350,7 +360,7 @@ void Drawer2D::OnGraph(LPDRAWITEMSTRUCT lpDrawItemStruct)
 	PointF ps[5];
 	SolidBrush databrush(Color::White);
 	Pen datapen(Color::White);
-	/*Bitmap map(Colordata[0].size(), Colordata.size());
+	Bitmap map(Colordata[0].size(), Colordata.size());
 	for (int i = 0; i < Colordata.size(); i++)
 	{
 		for (int j = 0; j < Colordata[i].size(); j++)
@@ -364,9 +374,9 @@ void Drawer2D::OnGraph(LPDRAWITEMSTRUCT lpDrawItemStruct)
 	gr.SetClip(rect);
 	gr.DrawImage(&map, 0, 0);
 	gr.ResetTransform();
-	gr.ResetClip();*/
+	gr.ResetClip();
 
-	for (int i = 0; i < Colordata.size(); i++)
+	/*for (int i = 0; i < Colordata.size(); i++)
 	{
 		for (int j = 0; j < Colordata[i].size(); j++)
 		{
@@ -378,7 +388,7 @@ void Drawer2D::OnGraph(LPDRAWITEMSTRUCT lpDrawItemStruct)
 			databrush.SetColor(Colordata[i][j].AsColor());
 			gr.FillRectangle(&databrush, ps[0].X, ps[1].Y, fabs(ps[1].X - ps[0].X), fabs(ps[1].Y - ps[0].Y));
 		}
-	}
+	}*/
 
 	if (ToBlack)
 	{

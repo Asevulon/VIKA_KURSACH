@@ -64,7 +64,7 @@ void MyDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_WT_PICTURE, WTDrw);
 	DDX_Control(pDX, IDC_FT_PICTURE2, WTIDDrw);
 	DDX_Control(pDX, IDC_FT_PICTURE3, WTSUBDRW);
-	DDX_Control(pDX, IDC_SLIDER1, Slider);
+	//DDX_Control(pDX, IDC_SLIDER1, Slider);
 }
 
 BEGIN_MESSAGE_MAP(MyDlg, CDialogEx)
@@ -72,8 +72,8 @@ BEGIN_MESSAGE_MAP(MyDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDOK, &MyDlg::OnBnClickedOk)
-	ON_BN_CLICKED(IDC_BUTTON_WT, &MyDlg::OnBnClickedButtonWt)
-	ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER1, &MyDlg::OnNMCustomdrawSlider1)
+	//ON_BN_CLICKED(IDC_BUTTON_WT, &MyDlg::OnBnClickedButtonWt)
+	//ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER1, &MyDlg::OnNMCustomdrawSlider1)
 END_MESSAGE_MAP()
 
 
@@ -118,7 +118,7 @@ BOOL MyDlg::OnInitDialog()
 	WTDrw.SetTitle(L"Вейвлет разложение");
 	WTDrw.SetPadding(22, 5, 10, 15);
 
-	WTIDDrw.SetTitle(L"Указанный уровень Вейвлет разложения (полусуммы)");
+	WTIDDrw.SetTitle(L"Материнский вейвлет");
 	WTIDDrw.SetPadding(22, 5, 10, 10);
 
 	WTSUBDRW.SetTitle(L"Указанный уровень Вейвлет разложения (полуразности)");
@@ -190,6 +190,9 @@ void MyDlg::OnBnClickedOk()
 	m.SetSin3(pdlg.A3, pdlg.W3, pdlg.Fi3, pdlg.N3);
 	m.SetNoise(pdlg.nm);
 	m.SetNoiseLevel(pdlg.NoiseLevel);
+	m.SetFmax(pdlg.Fmax);
+	m.SetFmin(pdlg.Fmin);
+	m.SetFn(pdlg.Fn);
 	m.main();
 	
 	SignalDrw.SetData(m.GetSignal(), m.GetSignalKeys());
@@ -198,7 +201,13 @@ void MyDlg::OnBnClickedOk()
 	FTDrw.SetData(m.GetFT(), m.GetFTKeys());
 	FTDrw.Invalidate();
 
-	WTDrw.SetData(m.GetWTFilled());
+	WTDrw.SetData(m.GetWT());
+	auto times = m.GetSignalKeys();
+	WTDrw.SetGraphRange(times.front(), times.back(), pdlg.Fmin, pdlg.Fmax);
+	WTDrw.Invalidate();
+
+	WTIDDrw.SetData(m.GetWavelet(), m.GetWaveletkeys());
+	/*WTDrw.SetData(m.GetWTFilled());
 	WTDrw.Invalidate();
 
 	WTIDDrw.SetData(m.GetWT(0));
@@ -207,27 +216,27 @@ void MyDlg::OnBnClickedOk()
 	WTSUBDRW.SetData(m.GetWTSUB(0));
 	WTSUBDRW.Invalidate();
 	Slider.SetRange(0, m.GetWTLen() - 1);
-	Slider.SetPos(0);
+	Slider.SetPos(0);*/
 }
 
-void MyDlg::OnBnClickedButtonWt()
-{
-	// TODO: добавьте свой код обработчика уведомлений
-	m.swapwt();
-	WTDrw.SetData(m.GetWTFilled());
-	WTDrw.Invalidate();
-}
-
-
-void MyDlg::OnNMCustomdrawSlider1(NMHDR* pNMHDR, LRESULT* pResult)
-{
-	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
-	// TODO: добавьте свой код обработчика уведомлений
-	*pResult = 0;
-	int id = Slider.GetPos();
-	WTIDDrw.SetData(m.GetWT(id));
-	WTIDDrw.Invalidate();
-
-	WTSUBDRW.SetData(m.GetWTSUB(id));
-	WTSUBDRW.Invalidate();
-}
+//void MyDlg::OnBnClickedButtonWt()
+//{
+//	// TODO: добавьте свой код обработчика уведомлений
+//	m.swapwt();
+//	WTDrw.SetData(m.GetWTFilled());
+//	WTDrw.Invalidate();
+//}
+//
+//
+//void MyDlg::OnNMCustomdrawSlider1(NMHDR* pNMHDR, LRESULT* pResult)
+//{
+//	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
+//	// TODO: добавьте свой код обработчика уведомлений
+//	*pResult = 0;
+//	/*int id = Slider.GetPos();
+//	WTIDDrw.SetData(m.GetWT(id));
+//	WTIDDrw.Invalidate();
+//
+//	WTSUBDRW.SetData(m.GetWTSUB(id));
+//	WTSUBDRW.Invalidate();*/
+//}

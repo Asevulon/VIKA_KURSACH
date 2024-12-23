@@ -43,4 +43,7 @@ public:
 	double dt;
 	CComboBox Noiser;
 	double NoiseLevel;
+	double Fmin;
+	double Fmax;
+	int Fn;
 };

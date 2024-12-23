@@ -14,20 +14,23 @@ IMPLEMENT_DYNAMIC(ParamDlg, CDialogEx)
 ParamDlg::ParamDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_DIALOG_PARAM, pParent)
 	, A1(1)
-	, W1(100)
+	, W1(10)
 	, Fi1(0)
 	, A2(1)
-	, W2(200)
+	, W2(20)
 	, Fi2(0)
 	, A3(1)
-	, W3(300)
+	, W3(30)
 	, Fi3(0)
-	, N1(128)
-	, N2(128)
-	, N3(256)
+	, N1(64)
+	, N2(64)
+	, N3(128)
 	, N(512)
-	, dt(3000)
+	, dt(200)
 	, NoiseLevel(0.1)
+	, Fmin(1)
+	, Fmax(50)
+	, Fn(49)
 {
 
 }
@@ -56,6 +59,9 @@ void ParamDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT15, dt);
 	DDX_Control(pDX, IDC_COMBO2, Noiser);
 	DDX_Text(pDX, IDC_EDIT17, NoiseLevel);
+	DDX_Text(pDX, IDC_EDIT13, Fmin);
+	DDX_Text(pDX, IDC_EDIT14, Fmax);
+	DDX_Text(pDX, IDC_EDIT18, Fn);
 }
 
 

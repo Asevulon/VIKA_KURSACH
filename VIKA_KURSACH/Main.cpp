@@ -241,7 +241,7 @@ void Main::AddNoise(int len, NoiseGenPtr_t gen)
     double Es = CalcE(signal);
     double En = CalcE(noise);
     double betta = sqrt(NoiseLevel * Es / En);
-
+    if (Es == 0)betta = 1;
     for (int i = 0; i < len; i++)signal[i] += betta * noise[i];
 }
 
@@ -264,6 +264,21 @@ void Main::SetNoiseLevel(double val)
     NoiseLevel = val;
 }
 
+void Main::SetFmin(double val)
+{
+    Fmin = val;
+}
+
+void Main::SetFmax(double val)
+{
+    Fmax = val;
+}
+
+void Main::SetFn(int val)
+{
+    Fn = val;
+}
+
 inline double Main::WhiteNoiseDot()
 {
     double res = 0;
@@ -279,6 +294,22 @@ inline double Main::CalcE(vector<double>& target)
     return res;
 }
 
+void Main::DoCWT()
+{
+    CWT cwt;
+    cwt.SetDt(dt);
+    cwt.SetSource(signal);
+    cwt.SetFmax(Fmax);
+    cwt.SetFmin(Fmin);
+    cwt.SetFn(Fn);
+    cwt.PsevdoMeyer();
+
+    wt = cwt.GetCWT();
+    frequencykeys = cwt.GetFkeys();
+    waveletfunc = cwt.GetWavelet();
+    waveletfunckeys = cwt.GetWaveleteys();
+}
+
 vector<double> Main::GetSignal()
 {
     return signal;
@@ -287,6 +318,21 @@ vector<double> Main::GetSignal()
 vector<double> Main::GetSignalKeys()
 {
     return signalkeys;
+}
+
+vector<double> Main::GetFrequencyKeys()
+{
+    return frequencykeys;
+}
+
+vector<double> Main::GetWavelet()
+{
+    return waveletfunc;
+}
+
+vector<double> Main::GetWaveletkeys()
+{
+    return waveletfunckeys;
 }
 
 vector<vector<double>> Main::GetWT()
@@ -332,9 +378,10 @@ void Main::main()
 {
     wtswapflag = false;
     CreateSignal();
-    DoWT();
+    //DoWT();
+    //FillEmptyWT(wtfilled,wt);
     DoFourea();
-    FillEmptyWT(wtfilled,wt);
+    DoCWT();
 }
 
 void Main::swapwt()

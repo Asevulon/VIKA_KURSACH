@@ -184,6 +184,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cmplx.h" />
+    <ClInclude Include="CWT.h" />
     <ClInclude Include="Drawer.h" />
     <ClInclude Include="Drawer2D.h" />
     <ClInclude Include="fourea.h" />
@@ -198,6 +199,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cmplx.cpp" />
+    <ClCompile Include="CWT.cpp" />
     <ClCompile Include="Drawer.cpp" />
     <ClCompile Include="Drawer2D.cpp" />
     <ClCompile Include="fourea.cpp" />

@@ -40,6 +40,10 @@ private:
 	double zmin;
 	double outzmax;
 	double outzmin;
+	double printingtop;
+	double printingbot;
+	double printingleft;
+	double printingright;
 	ULONG_PTR token;
 	
 	CString title;
@@ -83,6 +87,7 @@ public:
 	void ShowPicture(bool flag);
 	void SetLogarithmic(bool flag);
 	void SetStretch(bool flag = true);
+	void SetGraphRange(double pleft, double pright, double pbot, double ptop);
 };
 
 

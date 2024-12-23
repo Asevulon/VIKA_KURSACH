@@ -40,9 +40,9 @@ public:
 	ParamDlg pdlg;
 	afx_msg void OnBnClickedOk();
 	Main m;
-	afx_msg void OnBnClickedButtonWt();
+	//afx_msg void OnBnClickedButtonWt();
 	Drawer WTIDDrw;
 	Drawer WTSUBDRW;
-	CSliderCtrl Slider;
-	afx_msg void OnNMCustomdrawSlider1(NMHDR* pNMHDR, LRESULT* pResult);
+	//CSliderCtrl Slider;
+	//afx_msg void OnNMCustomdrawSlider1(NMHDR* pNMHDR, LRESULT* pResult);
 };
