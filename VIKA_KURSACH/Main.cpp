@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Main.h"
+#include<algorithm>
 enum::Main::SignalType {
     Summ,
     Sequence
