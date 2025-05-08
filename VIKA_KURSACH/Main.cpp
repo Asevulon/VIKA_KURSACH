@@ -303,12 +303,21 @@ void Main::DoCWT()
     cwt.SetFmax(Fmax);
     cwt.SetFmin(Fmin);
     cwt.SetFn(Fn);
-    cwt.PsevdoMeyer();
+    cwt.DoPsevdoMeyer();
 
+    cwtsaved = cwt;
     wt = cwt.GetCWT();
     frequencykeys = cwt.GetFkeys();
     waveletfunc = cwt.GetWavelet();
     waveletfunckeys = cwt.GetWaveleteys();
+}
+
+void Main::DoICWT()
+{
+    CWT icwt = cwtsaved;
+    icwt.DoInverseTransform(Wavelets::PsevdoMeyer);
+
+    iwt = icwt.GetICWT();
 }
 
 vector<double> Main::GetSignal()
@@ -375,6 +384,11 @@ vector<double> Main::GetFTKeys()
     return ftakeys;
 }
 
+vector<double> Main::GetIWT()
+{
+    return iwt;
+}
+
 void Main::main()
 {
     wtswapflag = false;
@@ -383,6 +397,7 @@ void Main::main()
     //FillEmptyWT(wtfilled,wt);
     DoFourea();
     DoCWT();
+    DoICWT();
 }
 
 void Main::swapwt()

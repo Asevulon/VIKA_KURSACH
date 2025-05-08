@@ -207,6 +207,8 @@ void MyDlg::OnBnClickedOk()
 	WTDrw.Invalidate();
 
 	WTIDDrw.SetData(m.GetWavelet(), m.GetWaveletkeys());
+
+	WTSUBDRW.SetData(m.GetIWT(), m.GetWaveletkeys());
 	/*WTDrw.SetData(m.GetWTFilled());
 	WTDrw.Invalidate();
 

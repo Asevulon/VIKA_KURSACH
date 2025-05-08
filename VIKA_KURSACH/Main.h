@@ -4,7 +4,6 @@
 #include"CWT.h"
 using namespace std;
 
-const double Pi = 4 * atan(1);
 
 class Main
 {
@@ -48,12 +47,14 @@ private:
 	vector<cmplx>ft;
 	vector<double>fta;
 	vector<double>ftakeys;
+	vector<double>iwt;
 
 	SignalType st;
 
 	typedef vector<double>(Main::* NoiseGenPtr_t)(int);
 	NoiseGenPtr_t noisetype = NULL;
 	bool wtswapflag = false;
+	CWT cwtsaved;
 protected:
 	void CreateSignal();
 	void CreateSignalSumm();
@@ -75,6 +76,7 @@ protected:
 	inline double CalcE(vector<double>& target);
 
 	void DoCWT();
+	void DoICWT();
 public:
 
 	void SetSin1(double A, double W, double Fi, int N);
@@ -101,6 +103,7 @@ public:
 	int GetWTLen();
 	vector<double>GetFT();
 	vector<double>GetFTKeys();
+	vector<double>GetIWT();
 
 	void main();
 	void swapwt();

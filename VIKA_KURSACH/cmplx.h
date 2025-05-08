@@ -3,6 +3,8 @@
 #include<vector>
 
 #define PI 3.141592653589793
+const double Pi = 4 * atan(1);
+const double sqrtPi = sqrt(Pi);
 
 void msg(char *err);
 

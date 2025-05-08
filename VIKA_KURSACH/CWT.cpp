@@ -1,4 +1,4 @@
-#include "pch.h"
+п»ї#include "pch.h"
 #include "CWT.h"
 
 void CWT::SetSource(const vector<double>& val)
@@ -56,76 +56,165 @@ vector<vector<double>> CWT::GetCWT()
 	return result;
 }
 
+vector<double> CWT::GetICWT()
+{
+	return recovered;
+}
+
 void CWT::DoCustomTransform(WaveletPtr wavelet)
 {
-	//минимальная защита от дурака, ломает прогу если не задан сигнал или вейвлет
+	//РјРёРЅРёРјР°Р»СЊРЅР°СЏ Р·Р°С‰РёС‚Р° РѕС‚ РґСѓСЂР°РєР°, Р»РѕРјР°РµС‚ РїСЂРѕРіСѓ РµСЃР»Рё РЅРµ Р·Р°РґР°РЅ СЃРёРіРЅР°Р» РёР»Рё РІРµР№РІР»РµС‚
 	if (source.empty())abort();
 	if (wavelet == NULL)abort();
 	if (Fmin <= 0)Fmin = 1;
 	if (Fmax == Fmin)Fmax++;
 
-	int n = source.size();											//кол-во отсчетов по времени
-	tkeys = vector<double>(n, 0);									//массив под время в модели (не отсчеты, а секунды)
-	fkeys = vector<double>(Fn, 0);									//массив под частоты в модели (по аналогии с выше)
-	waveletfunc = vector<double>(10 * n, 0);							//массив под материнский вейвлет
-	waveletfunckeys = vector<double>(10 * n, 0);						//массив под шаги по времени для материнского вейвлета
-	result = vector<vector<double>>(Fn, vector<double>(n, 0));		//результат вейвлет преобразования
-	vector<double>psi(2 * n, 0);									//массив под семейство вейвлетов на i-том шаге
+	int n = source.size();											//РєРѕР»-РІРѕ РѕС‚СЃС‡РµС‚РѕРІ РїРѕ РІСЂРµРјРµРЅРё
+	tkeys = vector<double>(n, 0);									//РјР°СЃСЃРёРІ РїРѕРґ РІСЂРµРјСЏ РІ РјРѕРґРµР»Рё (РЅРµ РѕС‚СЃС‡РµС‚С‹, Р° СЃРµРєСѓРЅРґС‹)
+	fkeys = vector<double>(Fn, 0);									//РјР°СЃСЃРёРІ РїРѕРґ С‡Р°СЃС‚РѕС‚С‹ РІ РјРѕРґРµР»Рё (РїРѕ Р°РЅР°Р»РѕРіРёРё СЃ РІС‹С€Рµ)
+	waveletfunc = vector<double>(10 * n, 0);							//РјР°СЃСЃРёРІ РїРѕРґ РјР°С‚РµСЂРёРЅСЃРєРёР№ РІРµР№РІР»РµС‚
+	waveletfunckeys = vector<double>(10 * n, 0);						//РјР°СЃСЃРёРІ РїРѕРґ С€Р°РіРё РїРѕ РІСЂРµРјРµРЅРё РґР»СЏ РјР°С‚РµСЂРёРЅСЃРєРѕРіРѕ РІРµР№РІР»РµС‚Р°
+	result = vector<vector<double>>(Fn, vector<double>(n, 0));		//СЂРµР·СѓР»СЊС‚Р°С‚ РІРµР№РІР»РµС‚ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ
+	vector<double>psi(2 * n, 0);									//РјР°СЃСЃРёРІ РїРѕРґ СЃРµРјРµР№СЃС‚РІРѕ РІРµР№РІР»РµС‚РѕРІ РЅР° i-С‚РѕРј С€Р°РіРµ
 
-	double fstep = (Fmax - Fmin) / (Fn - 1);						//шаг по частоте
-	double f = 0;													//частота
-	double s = 0;													//параметр, обратный частоте
-	double scale = 1;												//масштабирующий коэфф.
-	double summ = 0;												//буффер для расчета свертки
+	double fstep = (Fmax - Fmin) / (Fn - 1);						//С€Р°Рі РїРѕ С‡Р°СЃС‚РѕС‚Рµ
+	double f = 0;													//С‡Р°СЃС‚РѕС‚Р°
+	double s = 0;													//РїР°СЂР°РјРµС‚СЂ, РѕР±СЂР°С‚РЅС‹Р№ С‡Р°СЃС‚РѕС‚Рµ
+	double scale = 1;												//РјР°СЃС€С‚Р°Р±РёСЂСѓСЋС‰РёР№ РєРѕСЌС„С„.
+	double summ = 0;												//Р±СѓС„С„РµСЂ РґР»СЏ СЂР°СЃС‡РµС‚Р° СЃРІРµСЂС‚РєРё
 
 	for (int i = 0; i < Fn; i++)
 	{
-		f = Fmin + i * fstep;										//частота на i-том шаге
-		s = 1. / f;													//s на i-том шаге
-		scale = sqrt(dt / s);										//м. коэфф. на i-том шаге
+		f = Fmin + i * fstep;										//С‡Р°СЃС‚РѕС‚Р° РЅР° i-С‚РѕРј С€Р°РіРµ
+		s = 1. / f;													//s РЅР° i-С‚РѕРј С€Р°РіРµ
+		scale = sqrt(dt / s);										//Рј. РєРѕСЌС„С„. РЅР° i-С‚РѕРј С€Р°РіРµ
 
 		for (int j = 0; j < psi.size(); j++)
 		{
-			psi[j] = scale * wavelet(double(j - n) * dt / s);		//семейство вейвлетов на i-том шаге, j = [-n, n]
+			psi[j] = scale * wavelet(double(j - n) * dt / s);		//СЃРµРјРµР№СЃС‚РІРѕ РІРµР№РІР»РµС‚РѕРІ РЅР° i-С‚РѕРј С€Р°РіРµ, j = [-n, n]
 		}
 
 		for (int j = 0; j < n; j++)
 		{
-			summ = 0;												//обнулили буфер
+			summ = 0;												//РѕР±РЅСѓР»РёР»Рё Р±СѓС„РµСЂ
 			for (int k = 0; k < n; k++)
 			{
-				summ += source[k] * psi[k - j + n];					//считаем свертку
+				summ += source[k] * psi[k - j + n];					//СЃС‡РёС‚Р°РµРј СЃРІРµСЂС‚РєСѓ
 				//summ += source[k] * wavelet(double(k - j) * dt / s);
 			}
-			result[i][j] = summ;									//записали результат свертки
+			result[i][j] = summ;									//Р·Р°РїРёСЃР°Р»Рё СЂРµР·СѓР»СЊС‚Р°С‚ СЃРІРµСЂС‚РєРё
 		}
 	}
 
 	for (int i = 0; i < Fn; i++)
 	{
-		fkeys[i] = Fmin + i * fstep;								//записали шаги по частоте для графика
+		fkeys[i] = Fmin + i * fstep;								//Р·Р°РїРёСЃР°Р»Рё С€Р°РіРё РїРѕ С‡Р°СЃС‚РѕС‚Рµ РґР»СЏ РіСЂР°С„РёРєР°
 	}
 
 	for (int i = 0; i < n; i++)
 	{
-		tkeys[i] = i * dt;											//записали шаги по времени для графика
+		tkeys[i] = i * dt;											//Р·Р°РїРёСЃР°Р»Рё С€Р°РіРё РїРѕ РІСЂРµРјРµРЅРё РґР»СЏ РіСЂР°С„РёРєР°
 	}
 
 	for (int j = 0; j < waveletfunc.size(); j++)
 	{
-		waveletfunc[j] = wavelet(double(j - (waveletfunc.size() / 2.)) * dt);						//записали вейвлет для графика
+		waveletfunc[j] = wavelet(double(j - (waveletfunc.size() / 2.)) * dt);						//Р·Р°РїРёСЃР°Р»Рё РІРµР№РІР»РµС‚ РґР»СЏ РіСЂР°С„РёРєР°
 		waveletfunckeys[j] = double(j - (waveletfunc.size() / 2.)) * dt;
 	}
 }
 
-const double Pi =4 * atan(1);
-const double sqrtPi = sqrt(Pi);
-void CWT::MHAT()
+double CWT::ComputeCpsi(WaveletPtr wavelet, int N)
 {
-	DoCustomTransform([](double t) {return 4. * (1. - t * t) * exp(-t * t / 2.) / 3. / sqrtPi; }); //мексиканская шляпа
+	// РЁР°Рі 1: Р“РµРЅРµСЂР°С†РёСЏ РґРёСЃРєСЂРµС‚РЅРѕРіРѕ РІРµР№РІР»РµС‚Р°
+	std::vector<double> psi(N);
+	double t0 = -N / 2 * dt; // Р¦РµРЅС‚СЂРёСЂСѓРµРј РІРµР№РІР»РµС‚ РЅР° РЅСѓР»Рµ
+	for (int i = 0; i < N; ++i) {
+		double t = t0 + i * dt;
+		psi[i] = wavelet(t); // Р—РЅР°С‡РµРЅРёСЏ РІРµР№РІР»РµС‚Р°
+	}
+
+	// РЁР°Рі 2: РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РІРµРєС‚РѕСЂР° psi РІ cmplx
+	std::vector<cmplx> psi_fft(N);
+	for (int i = 0; i < N; ++i) {
+		psi_fft[i] = cmplx(psi[i], 0.0); // Р”РѕР±Р°РІР»СЏРµРј РЅСѓР»РµРІСѓСЋ РјРЅРёРјСѓСЋ С‡Р°СЃС‚СЊ
+	}
+
+	// РЁР°Рі 3: Р’С‹РїРѕР»РЅРµРЅРёРµ РїСЂСЏРјРѕРіРѕ FFT (is = -1)
+	fourea(N, psi_fft, -1.0);
+
+	// РЁР°Рі 4: Р’С‹С‡РёСЃР»РµРЅРёРµ РєРІР°РґСЂР°С‚Р° РјРѕРґСѓР»СЏ Р¤СѓСЂСЊРµ-РѕР±СЂР°Р·Р°
+	int half_N = N / 2;
+	std::vector<double> power_spectrum(half_N + 1);
+
+	for (int k = 0; k <= half_N; ++k) {
+		double re = psi_fft[k].re;
+		double im = psi_fft[k].im;
+		power_spectrum[k] = re * re + im * im;
+	}
+
+	// РЁР°Рі 5: РРЅС‚РµРіСЂРёСЂРѕРІР°РЅРёРµ РїРѕ РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡Р°СЃС‚РѕС‚Р°Рј
+	double df = 1.0 / (N * dt); // РЁР°Рі РїРѕ С‡Р°СЃС‚РѕС‚Рµ
+	double C_psi = 0.0;
+
+	for (int k = 1; k <= half_N; ++k) { // РРіРЅРѕСЂРёСЂСѓРµРј РЅСѓР»РµРІСѓСЋ С‡Р°СЃС‚РѕС‚Сѓ (k=0)
+		double xi = k * df; // РџРѕР»РѕР¶РёС‚РµР»СЊРЅР°СЏ С‡Р°СЃС‚РѕС‚Р°
+		double integrand = power_spectrum[k] / xi; // РџРѕРґС‹РЅС‚РµРіСЂР°Р»СЊРЅРѕРµ РІС‹СЂР°Р¶РµРЅРёРµ
+		C_psi += integrand * df; // РџСЂРёР±Р»РёР¶РµРЅРёРµ РёРЅС‚РµРіСЂР°Р»Р°
+	}
+
+	// РЁР°Рі 6: РќРѕСЂРјР°Р»РёР·Р°С†РёСЏ
+	C_psi *= 2.0 / (2.0 * Pi); // РЈС‡РёС‚С‹РІР°РµРј РёРЅС‚РµРіСЂР°Р» РїРѕ РІСЃРµРј С‡Р°СЃС‚РѕС‚Р°Рј Рё РјРЅРѕР¶РёС‚РµР»СЊ 1/(2ПЂ)
+
+	return C_psi;
 }
 
-void CWT::PsevdoMeyer()
+void CWT::DoInverseTransform(WaveletPtr wavelet)
 {
-	DoCustomTransform([](double t) {return (t != 0) ? (sin(2. * Pi * t) - sin(Pi * t)) / Pi / t : 1; });
+	DoInverseTransform(wavelet, ComputeCpsi(wavelet));
+}
+
+void CWT::DoInverseTransform(WaveletPtr wavelet, double C_psi)
+{
+	recovered = vector<double>(source.size(), 0.0);
+	int n = source.size();
+	int num_scales = Fn; // РєРѕР»РёС‡РµСЃС‚РІРѕ РјР°СЃС€С‚Р°Р±РѕРІ
+	double delta_b = dt; // С€Р°Рі РїРѕ СЃРґРІРёРіСѓ (РІСЂРµРјРµРЅРё)
+	double delta_f = (Fmax - Fmin) / (Fn - 1); // С€Р°Рі РїРѕ С‡Р°СЃС‚РѕС‚Рµ
+	vector<double> scales(num_scales);
+
+	// Р’С‹С‡РёСЃР»РµРЅРёРµ РјР°СЃС€С‚Р°Р±РѕРІ a_i = 1/f_i
+	for (int i = 0; i < num_scales; ++i) {
+		scales[i] = 1.0 / (Fmin + i * delta_f);
+	}
+
+	// Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ СЃРёРіРЅР°Р»Р°
+	for (int k = 0; k < n; ++k) {
+		double t_k = k * dt; // С‚РµРєСѓС‰РµРµ РІСЂРµРјСЏ
+		double sum = 0.0;
+		for (int i = 0; i < num_scales; ++i) {
+			double a_i = scales[i];
+			if (a_i == 0) continue;
+			// Р’С‹С‡РёСЃР»РµРЅРёРµ С€Р°РіР° РїРѕ РјР°СЃС€С‚Р°Р±Сѓ
+			double delta_a = (i < num_scales - 1) ? (scales[i + 1] - scales[i]) : (scales[i] - scales[i - 1]);
+			if (delta_a == 0) delta_a = scales[1] - scales[0]; // РїСЂРµРґРїРѕР»РѕР¶РёРј, С‡С‚Рѕ С€Р°Рі РїРѕСЃС‚РѕСЏРЅРЅС‹Р№
+			for (int j = 0; j < n; ++j) {
+				double b_j = j * dt; // СЃРґРІРёРі
+				double arg = (t_k - b_j) / a_i; // Р°СЂРіСѓРјРµРЅС‚ РІРµР№РІР»РµС‚Р°
+				double psi_val = wavelet(arg); // Р·РЅР°С‡РµРЅРёРµ РІРµР№РІР»РµС‚Р°
+				// Р’РєР»Р°Рґ РєРѕСЌС„С„РёС†РёРµРЅС‚Р° CWT[i][j] РІ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ
+				sum += result[i][j] * psi_val * delta_a * delta_b / (C_psi * a_i);
+			}
+		}
+		recovered[k] = sum;
+	}
+}
+
+void CWT::DoMHAT()
+{
+	DoCustomTransform(Wavelets::MHAT); //РјРµРєСЃРёРєР°РЅСЃРєР°СЏ С€Р»СЏРїР°
+}
+
+void CWT::DoPsevdoMeyer()
+{
+	DoCustomTransform(Wavelets::PsevdoMeyer);
 }
