@@ -184,6 +184,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cmplx.h" />
+    <ClInclude Include="CustomImageDlg.h" />
     <ClInclude Include="CWT.h" />
     <ClInclude Include="Drawer.h" />
     <ClInclude Include="Drawer2D.h" />
@@ -199,6 +200,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cmplx.cpp" />
+    <ClCompile Include="CustomImageDlg.cpp" />
     <ClCompile Include="CWT.cpp" />
     <ClCompile Include="Drawer.cpp" />
     <ClCompile Include="Drawer2D.cpp" />

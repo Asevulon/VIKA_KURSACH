@@ -1,6 +1,6 @@
 ﻿#include "pch.h"
 #include "CWT.h"
-
+#include "algorithm"
 void CWT::SetSource(const vector<double>& val)
 {
 	source = val;
@@ -69,41 +69,42 @@ void CWT::DoCustomTransform(WaveletPtr wavelet)
 	if (Fmin <= 0)Fmin = 1;
 	if (Fmax == Fmin)Fmax++;
 
+	fft four;
 	int n = source.size();											//кол-во отсчетов по времени
 	tkeys = vector<double>(n, 0);									//массив под время в модели (не отсчеты, а секунды)
 	fkeys = vector<double>(Fn, 0);									//массив под частоты в модели (по аналогии с выше)
-	waveletfunc = vector<double>(10 * n, 0);							//массив под материнский вейвлет
-	waveletfunckeys = vector<double>(10 * n, 0);						//массив под шаги по времени для материнского вейвлета
+	waveletfunc = vector<double>(n, 0);							//массив под материнский вейвлет
+	waveletfunckeys = vector<double>(n, 0);						//массив под шаги по времени для материнского вейвлета
 	result = vector<vector<double>>(Fn, vector<double>(n, 0));		//результат вейвлет преобразования
-	vector<double>psi(2 * n, 0);									//массив под семейство вейвлетов на i-том шаге
-
+	vector<double>psi(n, 0);									//массив под семейство вейвлетов на i-том шаге
+	vector<vector<cmplx>>sresult(Fn, vector<cmplx>(n));
+	
+	four.DoFourea(source);
+	auto fsource = four.GetData();
+	
+	double f0 = 0.896; // ComputeF0(wavelet);
 	double fstep = (Fmax - Fmin) / (Fn - 1);						//шаг по частоте
 	double f = 0;													//частота
-	double s = 0;													//параметр, обратный частоте
+	double a = 0;													//параметр, обратный частоте
 	double scale = 1;												//масштабирующий коэфф.
-	double summ = 0;												//буффер для расчета свертки
 
 	for (int i = 0; i < Fn; i++)
 	{
 		f = Fmin + i * fstep;										//частота на i-том шаге
-		s = 1. / f;													//s на i-том шаге
-		scale = sqrt(dt / s);										//м. коэфф. на i-том шаге
+		a = f0 / f;													//s на i-том шаге
+		scale = 1.0 / sqrt(a);
 
-		for (int j = 0; j < psi.size(); j++)
+		ProduceWavelet(wavelet, a, psi);
+		four.DoFourea(psi);
+		auto fpsi = four.GetData();
+		for (int j = 0; j < n; ++j)
 		{
-			psi[j] = scale * wavelet(double(j - n) * dt / s);		//семейство вейвлетов на i-том шаге, j = [-n, n]
+			sresult[i][j] = (fsource[j] * conjg(fpsi[j]));
 		}
 
-		for (int j = 0; j < n; j++)
-		{
-			summ = 0;												//обнулили буфер
-			for (int k = 0; k < n; k++)
-			{
-				summ += source[k] * psi[k - j + n];					//считаем свертку
-				//summ += source[k] * wavelet(double(k - j) * dt / s);
-			}
-			result[i][j] = summ;									//записали результат свертки
-		}
+		four.DoInversedFourea(sresult[i]);
+		result[i] = four.GetDataAbs();
+		for (auto& res : result[i])res *= scale;
 	}
 
 	for (int i = 0; i < Fn; i++)
@@ -118,8 +119,72 @@ void CWT::DoCustomTransform(WaveletPtr wavelet)
 
 	for (int j = 0; j < waveletfunc.size(); j++)
 	{
-		waveletfunc[j] = wavelet(double(j - (waveletfunc.size() / 2.)) * dt);						//записали вейвлет для графика
-		waveletfunckeys[j] = double(j - (waveletfunc.size() / 2.)) * dt;
+		waveletfunc[j] = wavelet(double(j - n / 2) * n * dt / double(n - 1));						//записали вейвлет для графика
+		waveletfunckeys[j] = double(j - n / 2) * n*dt / double(n - 1);
+	}
+}
+
+void CWT::DoCustomTransform(ComplexWaveletPtr wavelet) {
+	// минимальная защита от дурака, ломает прогу если не задан сигнал или вейвлет
+		if (source.empty())abort();
+	if (wavelet == NULL)abort();
+	if (Fmin <= 0)Fmin = 1;
+	if (Fmax == Fmin)Fmax++;
+
+	fft four;
+	int n = source.size();											//кол-во отсчетов по времени
+	tkeys = vector<double>(n, 0);									//массив под время в модели (не отсчеты, а секунды)
+	fkeys = vector<double>(Fn, 0);									//массив под частоты в модели (по аналогии с выше)
+	waveletfunc = vector<double>(n, 0);							//массив под материнский вейвлет
+	waveletfunckeys = vector<double>(n, 0);						//массив под шаги по времени для материнского вейвлета
+	result = vector<vector<double>>(Fn, vector<double>(n, 0));		//результат вейвлет преобразования
+	vector<cmplx>psi(n, cmplx());									//массив под семейство вейвлетов на i-том шаге
+	vector<vector<cmplx>>sresult(Fn, vector<cmplx>(n));
+
+	four.DoFourea(source);
+	auto fsource = four.GetData();
+
+	double f0 = Wavelets::MorletW0 / 2 / Pi;
+	double fstep = (Fmax - Fmin) / (Fn - 1);						//шаг по частоте
+	double f = 0;													//частота
+	double a = 0;													//параметр, обратный частоте
+	double scale = 1;												//масштабирующий коэфф.
+
+	for (int i = 0; i < Fn; i++)
+	{
+		f = Fmin + i * fstep;										//частота на i-том шаге
+		a = f0 / f;													//s на i-том шаге
+		scale = 1.0 / sqrt(a);
+
+		ProduceWavelet(wavelet, a, psi);
+		four.DoFourea(psi);
+		auto fpsi = four.GetData();
+		for (int j = 0; j < n; ++j)
+		{
+			sresult[i][j] = (fsource[j] * conjg(fpsi[j]));
+		}
+
+		four.DoInversedFourea(sresult[i]);
+		result[i] = four.GetDataAbs();
+		for (auto& res : result[i])res *= scale;
+	}
+
+	for (auto& row : result)std::rotate(row.begin(), row.begin() + n / 2, row.end());
+
+	for (int i = 0; i < Fn; i++)
+	{
+		fkeys[i] = Fmin + i * fstep;								//записали шаги по частоте для графика
+	}
+
+	for (int i = 0; i < n; i++)
+	{
+		tkeys[i] = i * dt;											//записали шаги по времени для графика
+	}
+
+	for (int j = 0; j < waveletfunc.size(); j++)
+	{
+		waveletfunc[j] = wavelet(double(j - n / 2) * n * dt / double(n - 1)).Abs();						//записали вейвлет для графика
+		waveletfunckeys[j] = double(j - n / 2) * n * dt / double(n - 1);
 	}
 }
 
@@ -163,9 +228,31 @@ double CWT::ComputeCpsi(WaveletPtr wavelet, int N)
 	}
 
 	// Шаг 6: Нормализация
-	C_psi *= 2.0 / (2.0 * Pi); // Учитываем интеграл по всем частотам и множитель 1/(2π)
+	C_psi *= 2.0 / (2.0 * Pi * dt); // Учитываем интеграл по всем частотам и множитель 1/(2π)
 
 	return C_psi;
+}
+
+double CWT::ComputeF0(WaveletPtr wavelet, float ldt, int N)
+{
+	vector<double> w = vector<double>(N, 0);
+	for (int i = 0; i < N; ++i)
+	{
+		w[i] = wavelet(i * ldt);
+	}
+	fft f;
+	f.DoFourea(w);
+	auto&& a = f.GetDataAbs();
+	int maxid = 0;
+	for (int i = 1; i < N / 2; ++i)
+	{
+		if (a[maxid] < a[i])
+		{
+			maxid = i;
+		}
+	}
+	double fstep = 1. / dt / double(N - 1);
+	return maxid * fstep;
 }
 
 void CWT::DoInverseTransform(WaveletPtr wavelet)
@@ -202,7 +289,7 @@ void CWT::DoInverseTransform(WaveletPtr wavelet, double C_psi)
 				double arg = (t_k - b_j) / a_i; // аргумент вейвлета
 				double psi_val = wavelet(arg); // значение вейвлета
 				// Вклад коэффициента CWT[i][j] в восстановление
-				sum += result[i][j] * psi_val * delta_a * delta_b / (C_psi * a_i);
+				sum += result[i][j] * psi_val * delta_a * delta_b / (C_psi * sqrt(a_i * dt));
 			}
 		}
 		recovered[k] = sum;
@@ -217,4 +304,62 @@ void CWT::DoMHAT()
 void CWT::DoPsevdoMeyer()
 {
 	DoCustomTransform(Wavelets::PsevdoMeyer);
+}
+
+std::vector<double>& CWT::ProduceWavelet(WaveletPtr wavelet, double s, std::vector<double>& out)
+{
+	int&& size = source.size();
+	out.resize(size);
+	for (int i = 0; i < size; ++i)
+	{
+		out[i] = wavelet((i - size / 2) * dt / s);
+	}
+	// TODO: вставьте здесь оператор return
+	return out;
+}
+
+//std::vector<cmplx>& CWT::ProduceWavelet(ComplexWaveletPtr wavelet, double a, std::vector<cmplx>& out)
+//{
+//	int n = source.size();
+//	out.resize(n);
+//
+//	for (int i = 0; i < n; ++i)
+//	{
+//		double t = (i - n / 2) * dt;
+//		out[i] = wavelet(t / a) / sqrt(a);
+//	}
+//
+//	// Центрирование
+//	std::rotate(out.begin(), out.begin() + n / 2, out.end());
+//
+//	return out;
+//}
+vector<cmplx>& CWT::ProduceWavelet(ComplexWaveletPtr wavelet, double a, vector<cmplx>& out) {
+	int n = source.size();
+	out.resize(n);
+	double ss = sqrt(a);
+	double E = 0;
+	for (int i = 0; i < n; ++i) {
+		double t = (i - n / 2) * dt; // Центрирование
+		out[i] = wavelet(t / a) / ss; // Масштабирование
+		E += out[i].re * out[i].re + out[i].im * out[i].im;
+	}
+	for (auto& item : out)item = item / E;
+	return out;
+}
+std::vector<double> CWT::ProduceWaveletSpectre(WaveletPtr wavelet, double s)
+{
+	vector<double> res;
+	fft f;
+	f.DoFourea(ProduceWavelet(wavelet, s, res));
+	res = f.GetDataAbs();
+	return res;
+}
+
+std::vector<double> CWT::ProduceWaveletSpectre(ComplexWaveletPtr wavelet, double s)
+{
+	vector<cmplx> res;
+	fft f;
+	f.DoFourea(ProduceWavelet(wavelet, s, res));
+	return f.GetDataAbs();
 }

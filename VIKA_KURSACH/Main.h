@@ -106,7 +106,9 @@ public:
 	vector<double>GetIWT();
 
 	void main();
+	void debug();
 	void swapwt();
+	void* debugdata;
 };
 
 vector<vector<double>>WT(vector<double>& source, vector<vector<double>>& out);

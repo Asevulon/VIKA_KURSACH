@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "fourea.h"
 
-std::vector<cmplx> foureier::Transform(std::vector<double>& input)
+std::vector<cmplx> FoureierBase::Transform(std::vector<double>& input)
 {
 	std::vector<cmplx>res;
 	res.resize(input.size());
@@ -34,13 +34,24 @@ void foureier::EmplaceColumn(std::vector<T>& source, std::vector<std::vector<T>>
 	}
 }
 
-std::vector<double> foureier::GetReal(std::vector<cmplx>& source)
+std::vector<double> FoureierBase::GetReal(std::vector<cmplx>& source)
 {
 	std::vector<double>res;
 	res.resize(source.size());
 	for (int i = 0; i < res.size(); i++)
 	{
 		res[i] = source[i].re;
+	}
+	return res;
+}
+
+std::vector<double> FoureierBase::GetImage(std::vector<cmplx>& source)
+{
+	std::vector<double>res;
+	res.resize(source.size());
+	for (int i = 0; i < res.size(); i++)
+	{
+		res[i] = source[i].im;
 	}
 	return res;
 }
@@ -162,4 +173,92 @@ std::vector<std::vector<double>> foureier::GetDataAbs()
 		}
 	}
 	return res;
+}
+
+void fft::DoFourea(std::vector<cmplx>& input)
+{
+	data = input;
+	fourea(data.size(), data, -1);
+}
+
+void fft::DoInversedFourea(std::vector<cmplx>& input)
+{
+	data = input;
+	fourea(data.size(), data, 1);
+}
+
+void fft::DoFourea(std::vector<double>& input)
+{
+	data = Transform(input);
+	fourea(data.size(), data, -1);
+}
+
+std::vector<cmplx> fft::GetData()
+{
+	return data;
+}
+
+std::vector<double> fft::GetDataAbs()
+{
+	std::vector<double>res;
+	res.resize(data.size());
+	for (int i = 0; i < data.size(); ++i)res[i] = data[i].Abs();
+	return res;
+}
+
+std::vector<double> fft::GetDataReal()
+{
+	return GetReal(data);
+}
+
+std::vector<double> fft::GetDataImg()
+{
+	return GetImage(data);
+}
+
+RichFFT& RichFFT::FFT(std::vector<double>& input)
+{
+	data = Transform(input);
+	FFT(data);
+	// TODO: вставьте здесь оператор return
+	return *this;
+}
+
+RichFFT& RichFFT::FFT(std::vector<cmplx>& input)
+{
+	data = input;
+	fourea(data.size(), data, 1);
+	// TODO: вставьте здесь оператор return
+	return *this;
+}
+
+RichFFT& RichFFT::IFFT(std::vector<cmplx>& input)
+{
+	data = input;
+	fourea(data.size(), data, 1);
+	// TODO: вставьте здесь оператор return
+	return *this;
+}
+
+std::vector<cmplx> RichFFT::GetData()
+{
+	return data;
+}
+
+std::vector<double> RichFFT::GetDataAbs()
+{
+	std::vector<double>res;
+	res.resize(data.size());
+	for (int i = 0; i < data.size(); ++i)res[i] = data[i].Abs();
+	return res;
+}
+
+std::vector<double> RichFFT::GetDataReal()
+{
+	return GetReal(data);
+}
+
+std::vector<double> RichFFT::GetDataImg()
+{
+	return GetImage(data);
 }

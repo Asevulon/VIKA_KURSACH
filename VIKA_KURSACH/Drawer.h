@@ -16,10 +16,10 @@ private:
 	vector<double>data;
 	vector<double>keys;
 
-	double lPadding;
-	double rPadding;
-	double tPadding;
-	double bPadding;
+	double lPadding = 22;
+	double rPadding = 5;
+	double tPadding = 10;
+	double bPadding = 10;
 	int MarksLen;
 
 	double left;

@@ -7,6 +7,7 @@
 #include"Drawer2D.h"
 #include"ParamDlg.h"
 #include"Main.h"
+#include"CustomImageDlg.h"
 // Диалоговое окно MyDlg
 class MyDlg : public CDialogEx
 {
@@ -45,4 +46,5 @@ public:
 	Drawer WTSUBDRW;
 	//CSliderCtrl Slider;
 	//afx_msg void OnNMCustomdrawSlider1(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnBnClickedButtonDebug();
 };

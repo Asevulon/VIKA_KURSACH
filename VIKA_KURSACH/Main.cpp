@@ -303,7 +303,7 @@ void Main::DoCWT()
     cwt.SetFmax(Fmax);
     cwt.SetFmin(Fmin);
     cwt.SetFn(Fn);
-    cwt.DoPsevdoMeyer();
+    cwt.DoCustomTransform(Wavelets::Morlet);
 
     cwtsaved = cwt;
     wt = cwt.GetCWT();
@@ -315,7 +315,7 @@ void Main::DoCWT()
 void Main::DoICWT()
 {
     CWT icwt = cwtsaved;
-    icwt.DoInverseTransform(Wavelets::PsevdoMeyer);
+    icwt.DoInverseTransform(Wavelets::MHAT);
 
     iwt = icwt.GetICWT();
 }
@@ -397,7 +397,69 @@ void Main::main()
     //FillEmptyWT(wtfilled,wt);
     DoFourea();
     DoCWT();
-    DoICWT();
+    //DoICWT();
+}
+
+void Main::debug()
+{
+    CreateSignal();
+
+    CWT cwt;
+    cwt.SetDt(dt);
+    cwt.SetSource(signal);
+    cwt.SetFmax(Fmax);
+    cwt.SetFmin(Fmin);
+    cwt.SetFn(Fn);
+
+    fft four;
+    four.DoFourea(signal);
+    auto fsource = four.GetData();
+
+    auto spectres = new vector<vector<double>>;
+    auto fs = vector<double>(Fn, 0);
+    auto f0s = vector<double>(Fn, 0);
+    auto res = vector<double>(signal.size(), 0);
+    auto& spec = *spectres;
+    double fstep = (Fmax - Fmin) / (Fn - 1);
+    vector<double>buf;
+    vector<cmplx>cbuf;
+
+    
+
+    const double f0 = 3 / Pi;
+    double testfd = 2048;
+    int testN = 8 * testfd;
+    for (int i = 0; i < Fn; ++i)
+    {
+        double f = Fmin + i * fstep;
+        double s = f0 / f;
+        fs[i] = s;
+        cwt.ProduceWavelet(Wavelets::Morlet, s, cbuf);
+        four.DoFourea(cbuf);
+        auto&& fbuf = four.GetData();
+        for (int j = 0; j < fbuf.size(); ++j)
+        {
+            fbuf[j] = fsource[j] * conjg(fbuf[j]);
+            res[j] = fbuf[j].Abs();
+        }
+
+        spec.push_back(res);
+        four.DoInversedFourea(fbuf);
+        res = four.GetDataReal();
+        //res = cwt.ProduceWaveletSpectre(Wavelets::Morlet, s);
+        
+        spec.push_back(res);
+    }
+
+    spec.push_back(signal);
+    four.DoInversedFourea(fsource);
+    spec.push_back(four.GetDataAbs());
+
+    spec.push_back(fs);
+
+    
+
+    debugdata = spectres;
 }
 
 void Main::swapwt()

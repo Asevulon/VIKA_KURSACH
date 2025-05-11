@@ -74,6 +74,7 @@ BEGIN_MESSAGE_MAP(MyDlg, CDialogEx)
 	ON_BN_CLICKED(IDOK, &MyDlg::OnBnClickedOk)
 	//ON_BN_CLICKED(IDC_BUTTON_WT, &MyDlg::OnBnClickedButtonWt)
 	//ON_NOTIFY(NM_CUSTOMDRAW, IDC_SLIDER1, &MyDlg::OnNMCustomdrawSlider1)
+	ON_BN_CLICKED(IDC_BUTTON_DEBUG, &MyDlg::OnBnClickedButtonDebug)
 END_MESSAGE_MAP()
 
 
@@ -242,3 +243,43 @@ void MyDlg::OnBnClickedOk()
 //	WTSUBDRW.SetData(m.GetWTSUB(id));
 //	WTSUBDRW.Invalidate();*/
 //}
+
+void MyDlg::OnBnClickedButtonDebug()
+{
+	// TODO: добавьте свой код обработчика уведомлений
+	if (pdlg.DoModal() != IDOK)return;
+	m.SetDt(1. / pdlg.dt);
+	m.SetN(pdlg.N);
+	m.SetSignalMode(pdlg.sm);
+	m.SetSin1(pdlg.A1, pdlg.W1, pdlg.Fi1, pdlg.N1);
+	m.SetSin2(pdlg.A2, pdlg.W2, pdlg.Fi2, pdlg.N2);
+	m.SetSin3(pdlg.A3, pdlg.W3, pdlg.Fi3, pdlg.N3);
+	m.SetNoise(pdlg.nm);
+	m.SetNoiseLevel(pdlg.NoiseLevel);
+	m.SetFmax(pdlg.Fmax);
+	m.SetFmin(pdlg.Fmin);
+	m.SetFn(pdlg.Fn);
+	m.debug();
+
+	vector<vector<double>>& spec = *(vector<vector<double>>*)m.debugdata;
+	auto fs = spec.back();
+	spec.pop_back();
+
+	auto ifft = spec.back();
+	spec.pop_back();
+	auto sig = spec.back();
+	spec.pop_back();
+
+	CString str;
+	bool awdwad = true;
+	for (int i = spec.size() - 1; i > -1; --i)
+	{
+		auto window = new CustomImageDlg;
+		str.Format(L"spec %d, s: %.2f", i, fs[i / 2]);
+		window->SetWindowTextW(str);
+		window->CustomImage.SetData(spec[i]);
+		if(awdwad)window->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOSIZE);
+		else window->SetWindowPos(NULL, 800, 0, 0, 0, SWP_NOSIZE);
+		awdwad = !awdwad;
+	}
+}
